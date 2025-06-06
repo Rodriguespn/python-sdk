@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authorize Client</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; }
+        .container { max-width: 500px; margin: auto; border: 1px solid #ccc; border-radius: 8px; padding: 2em; background: #fafafa; }
+        h2 { margin-top: 0; }
+        .client-info { margin-bottom: 1em; }
+        .actions { display: flex; justify-content: flex-end; gap: 1em; }
+        button { padding: 0.5em 1.5em; font-size: 1em; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Authorize Client</h2>
+        <div class="client-info">
+            <strong>Client Name:</strong> {{ client.client_name or client.client_id }}<br>
+            <strong>Redirect URI:</strong> {{ client.redirect_uris[0] if client.redirect_uris else 'N/A' }}<br>
+            <strong>Scope:</strong> {{ scope or 'None' }}
+        </div>
+        <form method="post" action="/authorize">
+            <input type="hidden" name="state" value="{{ state }}" />
+            <div class="actions">
+                <button type="submit">Approve</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

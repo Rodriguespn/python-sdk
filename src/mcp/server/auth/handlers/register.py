@@ -29,16 +29,17 @@ async def build_and_register_client(
         raise ValueError("grant_types must be authorization_code and refresh_token")
 
     client_id = client_id or str(uuid4())
-    client_secret = None
-    if client_metadata.token_endpoint_auth_method != "none":
-        client_secret = secrets.token_hex(32)
-
     client_id_issued_at = int(time.time())
-    client_secret_expires_at = (
-        client_id_issued_at + options.client_secret_expiry_seconds
-        if options.client_secret_expiry_seconds is not None
-        else None
-    )
+    
+    client_secret = None
+    client_secret_expires_at = None
+    if options.enabled and client_metadata.token_endpoint_auth_method != "none":
+        client_secret = secrets.token_hex(32)
+        client_secret_expires_at = (
+            client_id_issued_at + options.client_secret_expiry_seconds
+            if options.client_secret_expiry_seconds is not None
+            else None
+        )
 
     client_info = OAuthClientInformationFull(
         client_id=client_id,
@@ -108,6 +109,7 @@ class RegistrationHandler:
             content=OAuthClientInformationFull(
                 client_id=str(uuid4()),
                 client_id_issued_at=int(time.time()),
+                client_secret=secrets.token_hex(32),
                 redirect_uris=["https://example.com/callback"],
                 grant_types=["authorization_code", "refresh_token"],
                 response_types=["code"],

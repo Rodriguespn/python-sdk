@@ -1,6 +1,36 @@
-"""FastMCP - A more ergonomic interface for MCP servers."""
-
 from __future__ import annotations as _annotations
+from contextvars import ContextVar
+from starlette.requests import Request
+from contextlib import contextmanager
+
+# ContextVar to store the current Starlette Request
+_current_http_request: ContextVar[Request | None] = ContextVar("http_request", default=None)
+
+@contextmanager
+def set_http_request(request: Request):
+    token = _current_http_request.set(request)
+    try:
+        yield request
+    finally:
+        _current_http_request.reset(token)
+
+class RequestContextMiddleware:
+    """
+    Middleware that stores each request in a ContextVar
+    """
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            with set_http_request(Request(scope)):
+                await self.app(scope, receive, send)
+        else:
+            await self.app(scope, receive, send)
+
+def get_current_request() -> Request | None:
+    return _current_http_request.get()
+"""FastMCP - A more ergonomic interface for MCP servers."""
 
 import inspect
 import re
@@ -764,7 +794,8 @@ class FastMCP:
         # mount these routes last, so they have the lowest route matching precedence
         routes.extend(self._custom_starlette_routes)
 
-        # Create Starlette app with routes and middleware
+        # Add RequestContextMiddleware as the outermost middleware
+        middleware.append(Middleware(RequestContextMiddleware))
         return Starlette(
             debug=self.settings.debug, routes=routes, middleware=middleware
         )
@@ -836,6 +867,8 @@ class FastMCP:
 
         routes.extend(self._custom_starlette_routes)
 
+        # Add RequestContextMiddleware as the outermost middleware
+        middleware.append(Middleware(RequestContextMiddleware))
         return Starlette(
             debug=self.settings.debug,
             routes=routes,

@@ -89,7 +89,7 @@ def create_auth_routes(
     # Allow CORS requests for endpoints meant to be hit by the OAuth client
     # (with the client secret). This is intended to support things like MCP Inspector,
     # where the client runs in a web browser.
-    auth_handler = AuthorizationHandler(provider)
+    auth_handler = AuthorizationHandler(provider, client_registration_options=client_registration_options)
     routes = [
         Route(
             "/.well-known/oauth-authorization-server",
