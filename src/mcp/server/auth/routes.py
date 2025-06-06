@@ -69,7 +69,7 @@ def create_auth_routes(
     issuer_url: AnyHttpUrl,
     service_documentation_url: AnyHttpUrl | None = None,
     client_registration_options: ClientRegistrationOptions | None = None,
-    revocation_options: RevocationOptions | None = None,
+    revocation_options: RevocationOptions | None = None
 ) -> list[Route]:
     validate_issuer_url(issuer_url)
 

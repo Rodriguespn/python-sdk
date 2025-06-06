@@ -24,6 +24,7 @@ from mcp.server.auth.provider import (
     OAuthAuthorizationServerProvider,
     construct_redirect_uri,
 )
+from mcp.server.auth.settings import ClientRegistrationOptions
 from mcp.shared.auth import (
     InvalidRedirectUriError,
     InvalidScopeError,
@@ -80,7 +81,7 @@ class AnyHttpUrlModel(RootModel[AnyHttpUrl]):
 
 
 
-TEMPLATES = Jinja2Templates(directory=os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'templates')))
+
 
 
 from starlette.requests import Request
@@ -122,7 +123,7 @@ def update_approved_clients_cookie(response: Response, client_id: str):
 @dataclass
 class AuthorizationHandler:
     provider: OAuthAuthorizationServerProvider[Any, Any, Any]
-    client_registration_options: Any = None
+    client_registration_options: ClientRegistrationOptions = None
 
     async def handle_get(self, request: Request) -> Response:
         """Handle GET /authorize. Register client if not found. Render approval dialog if not approved."""
@@ -219,7 +220,7 @@ class AuthorizationHandler:
                 scopes=scopes,
                 code_challenge=auth_request.code_challenge,
                 redirect_uri=auth_request.redirect_uri,
-                redirect_uri_provided_explicitly=auth_request.redirect_uri is not None,
+                redirect_uri_provided_explicitly=bool(auth_request.redirect_uri),
             )
             try:
                 return RedirectResponse(
@@ -238,13 +239,9 @@ class AuthorizationHandler:
                     headers={"Cache-Control": "no-store"},
                 )
 
-        # Not approved: render approval dialog
+        # Not approved: render approval dialog via provider
         state_b64 = base64.b64encode(json.dumps(dict(params)).encode()).decode()
-        return TEMPLATES.TemplateResponse(
-            "approval_dialog.html",
-            {"request": request, "client": client, "state": state_b64},
-            status_code=200,
-        )
+        return await self.provider.render_approval_dialog(request, client, state_b64)
 
     async def handle_post(self, request: Request) -> Response:
         """Handle POST /authorize."""

@@ -3,6 +3,8 @@ from typing import Generic, Literal, Protocol, TypeVar
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from pydantic import AnyHttpUrl, BaseModel
+from requests import Response
+from starlette.requests import Request  # noqa: F811
 
 from mcp.shared.auth import (
     OAuthClientInformationFull,
@@ -99,6 +101,18 @@ AccessTokenT = TypeVar("AccessTokenT", bound=AccessToken)
 class OAuthAuthorizationServerProvider(
     Protocol, Generic[AuthorizationCodeT, RefreshTokenT, AccessTokenT]
 ):
+    async def render_approval_dialog(self, request: Request, client_id: str, state_b64: str) -> Response:
+        """
+        Render an HTML approval dialog. Implementors should return a Starlette Response.
+        Args:
+            request: The Starlette Request object
+            client: The OAuthClientInformationFull for the client
+            state_b64: The encoded state string
+        Returns:
+            A Starlette Response (e.g., HTMLResponse or TemplateResponse)
+        """
+        raise NotImplementedError("render_approval_dialog must be implemented by the provider if custom approval dialogs are needed.")
+
     async def get_client(self, client_id: str) -> OAuthClientInformationFull | None:
         """
         Retrieves client information by client ID.
