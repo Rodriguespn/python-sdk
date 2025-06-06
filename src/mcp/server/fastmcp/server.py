@@ -659,6 +659,8 @@ class FastMCP:
         from starlette.middleware import Middleware
         from starlette.routing import Mount, Route
 
+        print("Running custom implementation of sse_app() on python sdk")
+
         # Update mount_path in settings if provided
         if mount_path is not None:
             self.settings.mount_path = mount_path
